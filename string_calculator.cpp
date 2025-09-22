@@ -7,6 +7,7 @@ int StringCalculator::Add(const std::string &numbers) {
     size_t pos = 0;
     std::string delimiter = DetectDelimiter(numbers, pos);
     std::string input = numbers.substr(pos);
+
     std::replace(input.begin(), input.end(), '\n', ',');
     if (delimiter != ",") {
         size_t start = 0;
@@ -21,39 +22,42 @@ int StringCalculator::Add(const std::string &numbers) {
     return SumNumbers(nums);
 }
 
-// Pure function: split string by delimiter
-std::vector<std::string> StringCalculator::Split(const std::string &str, const std::string &delimiter) {
+// Pure: split string by delimiter
+std::vector<std::string> StringCalculator::Split(const std::string &str,
+                                                 const std::string &delimiter) {
     std::vector<std::string> result;
-    size_t start = 0, pos = 0;
+    size_t start = 0;
+    size_t pos = 0;
+    size_t dlen = delimiter.length();
     while ((pos = str.find(delimiter, start)) != std::string::npos) {
         result.push_back(str.substr(start, pos - start));
-        start = pos + delimiter.length();
+        start = pos + dlen;
     }
     result.push_back(str.substr(start));
     return result;
 }
 
-// Pure function: detect custom delimiter
+// Pure: detect delimiter, return ',' if default
 std::string StringCalculator::DetectDelimiter(const std::string &numbers, size_t &pos) {
     if (numbers.substr(0, 2) != "//") {
         pos = 0;
         return ",";
     }
     size_t newline = numbers.find('\n');
-    if (numbers[2] == '[') { // multi-character delimiter
+    if (numbers[2] == '[') {
         size_t end = numbers.find(']', 2);
         pos = newline + 1;
         return numbers.substr(3, end - 3);
     }
-    pos = newline + 1; // single-character delimiter
+    pos = newline + 1;
     return std::string(1, numbers[2]);
 }
 
-// Pure function: parse tokens into numbers, throw if negative
+// Pure: parse numbers, throw on negatives, ignore >1000
 std::vector<int> StringCalculator::ParseNumbers(const std::vector<std::string> &tokens) {
     std::vector<int> numbers;
     std::string negatives;
-    for (const auto &token : tokens) {
+    for (const std::string &token : tokens) {
         if (token.empty()) continue;
         int num = std::stoi(token);
         if (num < 0) {
@@ -69,7 +73,7 @@ std::vector<int> StringCalculator::ParseNumbers(const std::vector<std::string> &
     return numbers;
 }
 
-// Pure function: sum all numbers in a vector
+// Pure: sum all numbers in vector
 int StringCalculator::SumNumbers(const std::vector<int> &numbers) {
     int sum = 0;
     for (int n : numbers) sum += n;
