@@ -1,25 +1,25 @@
 #include "string_calculator.h"
+#include <regex>
 #include <sstream>
 #include <stdexcept>
 #include <algorithm>
 #include <numeric>
-#include <iterator>
 
 int StringCalculator::Add(const std::string &numbers) {
     size_t pos = 0;
-    std::string delimiter_str = DetectDelimiter(numbers, pos);
-    char delimiter_char = delimiter_str[0];
+    std::string delimiter = DetectDelimiter(numbers, pos);
     std::string input = numbers.substr(pos);
 
+    // Normalize newlines to comma
     std::replace(input.begin(), input.end(), '\n', ',');
-    if (delimiter_char != ',') {
-        std::replace(input.begin(), input.end(), delimiter_char, ',');
-    }
 
-    return SumNumbers(ParseNumbers(Split(input, ',')));
+    // Convert delimiter to regex string
+    std::string delimiter_regex = delimiter == "," ? "," : std::regex_replace(delimiter, std::regex(R"([\^$.|?*+(){}\[\]])"), R"(\\$&)");
+
+    return SumNumbers(ParseNumbers(Split(input, delimiter_regex)));
 }
 
-// Detect delimiter, returns ',' if default
+// Detect delimiter, default ','
 std::string StringCalculator::DetectDelimiter(const std::string &numbers, size_t &pos) {
     return numbers.substr(0, 2) == "//"
                ? (numbers[2] == '['
@@ -28,14 +28,15 @@ std::string StringCalculator::DetectDelimiter(const std::string &numbers, size_t
                : (pos = 0, std::string(","));
 }
 
-// Split using stringstream and iterators (no loops)
-std::vector<std::string> StringCalculator::Split(const std::string &input, char delimiter) {
-    std::stringstream ss(input);
-    return std::vector<std::string>{std::istream_iterator<std::string, char>(ss),
-                                    std::istream_iterator<std::string, char>()};
+// Split using regex (no loops), CCN = 0
+std::vector<std::string> StringCalculator::Split(const std::string &input,
+                                                 const std::string &delimiter_regex) {
+    std::regex re(delimiter_regex);
+    return std::vector<std::string>{std::sregex_token_iterator(input.begin(), input.end(), re, -1),
+                                    std::sregex_token_iterator()};
 }
 
-// Parse numbers: std::transform, std::copy_if, std::for_each
+// Parse numbers, throw negatives, ignore >1000 using STL
 std::vector<int> StringCalculator::ParseNumbers(const std::vector<std::string> &tokens) {
     std::vector<int> numbers(tokens.size());
     std::transform(tokens.begin(), tokens.end(), numbers.begin(),
@@ -44,6 +45,7 @@ std::vector<int> StringCalculator::ParseNumbers(const std::vector<std::string> &
     std::string negatives;
     std::for_each(numbers.begin(), numbers.end(),
                   [&negatives](int n) { if (n < 0) negatives += (negatives.empty() ? "" : ",") + std::to_string(n); });
+
     if (!negatives.empty()) throw std::runtime_error("negatives not allowed: " + negatives);
 
     std::vector<int> filtered;
@@ -52,7 +54,7 @@ std::vector<int> StringCalculator::ParseNumbers(const std::vector<std::string> &
     return filtered;
 }
 
-// Sum using accumulate
+// Sum using accumulate, CCN = 0
 int StringCalculator::SumNumbers(const std::vector<int> &numbers) {
     return std::accumulate(numbers.begin(), numbers.end(), 0);
 }
