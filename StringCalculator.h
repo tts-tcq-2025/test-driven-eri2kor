@@ -10,14 +10,17 @@ public:
     int Add(const std::string& numbers);
 
 private:
-    bool isEmptyInput(const std::string& input);
-    bool hasCustomDelimiter(const std::string& input);
-    std::string extractDelimiter(const std::string& input);
-    std::string extractNumbers(const std::string& input);
-    std::vector<std::string> splitNumbers(const std::string& numbers, const std::string& delimiter);
-    std::vector<int> parseNumbers(const std::vector<std::string>& tokens);
-    void validateNoNegatives(const std::vector<int>& numbers);
-    int calculateSum(const std::vector<int>& numbers);
+    bool isEmptyString(const std::string& input) const;
+    bool hasCustomDelimiter(const std::string& input) const;
+    std::string extractDelimiter(const std::string& input) const;
+    std::string extractNumbersSection(const std::string& input) const;
+    std::vector<std::string> tokenizeNumbers(const std::string& numbers, const std::string& delimiter) const;
+    std::vector<int> convertToIntegers(const std::vector<std::string>& tokens) const;
+    void validateNegativeNumbers(const std::vector<int>& numbers) const;
+    int sumValidNumbers(const std::vector<int>& numbers) const;
+    std::string createNegativeErrorMessage(const std::vector<int>& negatives) const;
+    std::string processDelimiterBrackets(const std::string& delimiter) const;
+    std::string escapeSpecialCharacters(const std::string& delimiter) const;
 };
 
 class NegativeNumberException : public std::runtime_error {
