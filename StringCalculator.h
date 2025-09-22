@@ -10,15 +10,14 @@ public:
     int Add(const std::string& numbers);
 
 private:
-    bool hasCustomDelimiter(const std::string& numbers);
-    std::string extractCustomDelimiter(const std::string& numbers);
-    std::string extractNumbers(const std::string& numbers);
-    std::string getDelimiterPattern(const std::string& delimiter);
-    std::vector<std::string> splitByDelimiter(const std::string& str, const std::string& pattern);
-    std::vector<int> convertToIntegers(const std::vector<std::string>& tokens);
-    void checkForNegatives(const std::vector<int>& numbers);
-    int sumNumbers(const std::vector<int>& numbers);
-    bool isValidNumber(int number);
+    bool isEmptyInput(const std::string& input);
+    bool hasCustomDelimiter(const std::string& input);
+    std::string extractDelimiter(const std::string& input);
+    std::string extractNumbers(const std::string& input);
+    std::vector<std::string> splitNumbers(const std::string& numbers, const std::string& delimiter);
+    std::vector<int> parseNumbers(const std::vector<std::string>& tokens);
+    void validateNoNegatives(const std::vector<int>& numbers);
+    int calculateSum(const std::vector<int>& numbers);
 };
 
 class NegativeNumberException : public std::runtime_error {
