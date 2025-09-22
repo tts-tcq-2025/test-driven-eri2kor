@@ -1,13 +1,11 @@
 #include "string_calculator.h"
-#include <sstream>
-#include <stdexcept>
 #include <algorithm>
+#include <stdexcept>
 
 int StringCalculator::Add(const std::string &numbers) {
     size_t pos = 0;
     std::string delimiter = DetectDelimiter(numbers, pos);
     std::string input = numbers.substr(pos);
-
     std::replace(input.begin(), input.end(), '\n', ',');
     if (delimiter != ",") {
         size_t start = 0;
@@ -16,19 +14,30 @@ int StringCalculator::Add(const std::string &numbers) {
             start += 1;
         }
     }
-
-    std::vector<std::string> tokens = Split(input, ",");
-    std::vector<int> nums = ParseNumbers(tokens);
-    return SumNumbers(nums);
+    return SumNumbers(ParseNumbers(Split(input, ","))); // one-line orchestrator
 }
 
-// Pure: split string by delimiter
+// Detect custom delimiter, returns ',' if default
+std::string StringCalculator::DetectDelimiter(const std::string &numbers, size_t &pos) {
+    if (numbers.substr(0, 2) != "//") {
+        pos = 0;
+        return ",";
+    }
+    size_t newline = numbers.find('\n');
+    if (numbers[2] == '[') { // multi-character
+        size_t end = numbers.find(']', 2);
+        pos = newline + 1;
+        return numbers.substr(3, end - 3);
+    }
+    pos = newline + 1; // single-character
+    return std::string(1, numbers[2]);
+}
+
+// Split string by delimiter (pure)
 std::vector<std::string> StringCalculator::Split(const std::string &str,
                                                  const std::string &delimiter) {
     std::vector<std::string> result;
-    size_t start = 0;
-    size_t pos = 0;
-    size_t dlen = delimiter.length();
+    size_t start = 0, pos = 0, dlen = delimiter.length();
     while ((pos = str.find(delimiter, start)) != std::string::npos) {
         result.push_back(str.substr(start, pos - start));
         start = pos + dlen;
@@ -37,23 +46,7 @@ std::vector<std::string> StringCalculator::Split(const std::string &str,
     return result;
 }
 
-// Pure: detect delimiter, return ',' if default
-std::string StringCalculator::DetectDelimiter(const std::string &numbers, size_t &pos) {
-    if (numbers.substr(0, 2) != "//") {
-        pos = 0;
-        return ",";
-    }
-    size_t newline = numbers.find('\n');
-    if (numbers[2] == '[') {
-        size_t end = numbers.find(']', 2);
-        pos = newline + 1;
-        return numbers.substr(3, end - 3);
-    }
-    pos = newline + 1;
-    return std::string(1, numbers[2]);
-}
-
-// Pure: parse numbers, throw on negatives, ignore >1000
+// Parse tokens into integers, throws if negative, ignores >1000
 std::vector<int> StringCalculator::ParseNumbers(const std::vector<std::string> &tokens) {
     std::vector<int> numbers;
     std::string negatives;
@@ -73,7 +66,7 @@ std::vector<int> StringCalculator::ParseNumbers(const std::vector<std::string> &
     return numbers;
 }
 
-// Pure: sum all numbers in vector
+// Sum all numbers (pure)
 int StringCalculator::SumNumbers(const std::vector<int> &numbers) {
     int sum = 0;
     for (int n : numbers) sum += n;
