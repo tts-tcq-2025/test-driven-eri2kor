@@ -10,17 +10,25 @@ public:
     int Add(const std::string& numbers);
 
 private:
-    bool isEmptyString(const std::string& input) const;
+    // CCN=1 functions for simple operations
+    bool isEmptyInput(const std::string& input) const;
     bool hasCustomDelimiter(const std::string& input) const;
-    std::string extractDelimiter(const std::string& input) const;
+    std::string extractDelimiterSection(const std::string& input) const;
     std::string extractNumbersSection(const std::string& input) const;
-    std::vector<std::string> tokenizeNumbers(const std::string& numbers, const std::string& delimiter) const;
-    std::vector<int> convertToIntegers(const std::vector<std::string>& tokens) const;
-    void validateNegativeNumbers(const std::vector<int>& numbers) const;
-    int sumValidNumbers(const std::vector<int>& numbers) const;
-    std::string createNegativeErrorMessage(const std::vector<int>& negatives) const;
+    
+    // CCN=2 functions for parsing
     std::string processDelimiterBrackets(const std::string& delimiter) const;
-    std::string escapeSpecialCharacters(const std::string& delimiter) const;
+    std::string escapeRegexCharacters(const std::string& delimiter) const;
+    std::vector<std::string> parseTokens(const std::string& numbers, const std::string& delimiter) const;
+    
+    // CCN=2 functions for validation and calculation
+    std::vector<int> convertToNumbers(const std::vector<std::string>& tokens) const;
+    void validateNoNegatives(const std::vector<int>& numbers) const;
+    int sumValidNumbers(const std::vector<int>& numbers) const;
+    
+    // CCN=1 helper functions
+    std::string formatNegativeMessage(const std::vector<int>& negatives) const;
+    bool isValidNumber(int number) const;
 };
 
 class NegativeNumberException : public std::runtime_error {
