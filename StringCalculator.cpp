@@ -1,6 +1,5 @@
 #include "StringCalculator.h"
 #include <sstream>
-#include <algorithm>
 #include <regex>
 
 int StringCalculator::Add(const std::string& numbers) {
@@ -8,42 +7,53 @@ int StringCalculator::Add(const std::string& numbers) {
         return 0;
     }
     
-    std::string numbersOnly;
-    std::string delimiter = extractDelimiter(numbers, numbersOnly);
+    std::string delimiter = hasCustomDelimiter(numbers) ? 
+        extractCustomDelimiter(numbers) : ",|\n";
+    std::string numbersOnly = hasCustomDelimiter(numbers) ? 
+        extractNumbers(numbers) : numbers;
     
-    auto tokens = split(numbersOnly, delimiter);
-    auto nums = parseNumbers(tokens);
-    
-    validateNumbers(nums);
-    return sumValidNumbers(nums);
+    auto tokens = splitByDelimiter(numbersOnly, getDelimiterPattern(delimiter));
+    auto nums = convertToIntegers(tokens);
+    checkForNegatives(nums);
+    return sumNumbers(nums);
 }
 
-std::string StringCalculator::extractDelimiter(const std::string& numbers, std::string& numbersOnly) {
-    if (numbers.length() < 2 || numbers.substr(0, 2) != "//") {
-        numbersOnly = numbers;
-        return ",|\n";
-    }
-    
+bool StringCalculator::hasCustomDelimiter(const std::string& numbers) {
+    return numbers.length() >= 2 && numbers.substr(0, 2) == "//";
+}
+
+std::string StringCalculator::extractCustomDelimiter(const std::string& numbers) {
     size_t newlinePos = numbers.find('\n');
     if (newlinePos == std::string::npos) {
-        numbersOnly = numbers;
+        return ",|\n";
+    }
+    return numbers.substr(2, newlinePos - 2);
+}
+
+std::string StringCalculator::extractNumbers(const std::string& numbers) {
+    size_t newlinePos = numbers.find('\n');
+    if (newlinePos == std::string::npos) {
+        return "";
+    }
+    return numbers.substr(newlinePos + 1);
+}
+
+std::string StringCalculator::getDelimiterPattern(const std::string& delimiter) {
+    if (delimiter.empty()) {
         return ",|\n";
     }
     
-    std::string delimiterLine = numbers.substr(2, newlinePos - 2);
-    numbersOnly = numbers.substr(newlinePos + 1);
-    
-    // Handle bracket format: [delimiter]
-    if (delimiterLine.front() == '[' && delimiterLine.back() == ']') {
-        return std::regex_escape(delimiterLine.substr(1, delimiterLine.length() - 2));
+    if (delimiter.front() == '[' && delimiter.back() == ']') {
+        std::string inner = delimiter.substr(1, delimiter.length() - 2);
+        return std::regex_replace(inner, std::regex(R"([\^\$\.\*\+\?\(\)\[\]\{\}\|\\])"), R"(\$&)");
     }
     
-    return std::regex_escape(delimiterLine);
+    return std::regex_replace(delimiter, std::regex(R"([\^\$\.\*\+\?\(\)\[\]\{\}\|\\])"), R"(\$&)");
 }
 
-std::vector<std::string> StringCalculator::split(const std::string& str, const std::string& delimiter) {
+std::vector<std::string> StringCalculator::splitByDelimiter(const std::string& str, const std::string& pattern) {
     std::vector<std::string> tokens;
-    std::regex delimiterRegex(delimiter);
+    std::regex delimiterRegex(pattern);
     std::sregex_token_iterator iter(str.begin(), str.end(), delimiterRegex, -1);
     std::sregex_token_iterator end;
     
@@ -53,11 +63,10 @@ std::vector<std::string> StringCalculator::split(const std::string& str, const s
             tokens.push_back(token);
         }
     }
-    
     return tokens;
 }
 
-std::vector<int> StringCalculator::parseNumbers(const std::vector<std::string>& tokens) {
+std::vector<int> StringCalculator::convertToIntegers(const std::vector<std::string>& tokens) {
     std::vector<int> nums;
     for (const auto& token : tokens) {
         try {
@@ -69,9 +78,9 @@ std::vector<int> StringCalculator::parseNumbers(const std::vector<std::string>& 
     return nums;
 }
 
-void StringCalculator::validateNumbers(const std::vector<int>& nums) {
+void StringCalculator::checkForNegatives(const std::vector<int>& numbers) {
     std::vector<int> negatives;
-    for (int num : nums) {
+    for (int num : numbers) {
         if (num < 0) {
             negatives.push_back(num);
         }
@@ -88,12 +97,16 @@ void StringCalculator::validateNumbers(const std::vector<int>& nums) {
     }
 }
 
-int StringCalculator::sumValidNumbers(const std::vector<int>& nums) {
+int StringCalculator::sumNumbers(const std::vector<int>& numbers) {
     int sum = 0;
-    for (int num : nums) {
-        if (num <= 1000) {
+    for (int num : numbers) {
+        if (isValidNumber(num)) {
             sum += num;
         }
     }
     return sum;
+}
+
+bool StringCalculator::isValidNumber(int number) {
+    return number >= 0 && number <= 1000;
 }
