@@ -3,49 +3,55 @@
 #include <sstream>
 #include <algorithm>
 
+// Main Add method - CCN=3
 int StringCalculator::Add(const std::string& numbers) {
-    if (isEmptyString(numbers)) {
+    if (isEmptyInput(numbers)) {
         return 0;
     }
     
-    const std::string delimiter = hasCustomDelimiter(numbers) ? 
-        extractDelimiter(numbers) : ",|\n";
-    const std::string numbersOnly = hasCustomDelimiter(numbers) ? 
+    std::string delimiter = hasCustomDelimiter(numbers) ? 
+        extractDelimiterSection(numbers) : ",|\n";
+    std::string numbersOnly = hasCustomDelimiter(numbers) ? 
         extractNumbersSection(numbers) : numbers;
     
-    const auto tokens = tokenizeNumbers(numbersOnly, delimiter);
-    const auto integers = convertToIntegers(tokens);
-    validateNegativeNumbers(integers);
-    return sumValidNumbers(integers);
+    auto tokens = parseTokens(numbersOnly, delimiter);
+    auto nums = convertToNumbers(tokens);
+    validateNoNegatives(nums);
+    return sumValidNumbers(nums);
 }
 
-bool StringCalculator::isEmptyString(const std::string& input) const {
+// CCN=1: Simple empty check
+bool StringCalculator::isEmptyInput(const std::string& input) const {
     return input.empty();
 }
 
+// CCN=1: Simple prefix check
 bool StringCalculator::hasCustomDelimiter(const std::string& input) const {
     return input.length() >= 2 && input.substr(0, 2) == "//";
 }
 
-std::string StringCalculator::extractDelimiter(const std::string& input) const {
-    const size_t newlinePos = input.find('\n');
+// CCN=2: Extract delimiter with fallback
+std::string StringCalculator::extractDelimiterSection(const std::string& input) const {
+    size_t newlinePos = input.find('\n');
     if (newlinePos == std::string::npos) {
         return ",|\n";
     }
     
-    const std::string rawDelimiter = input.substr(2, newlinePos - 2);
-    const std::string processedDelimiter = processDelimiterBrackets(rawDelimiter);
-    return escapeSpecialCharacters(processedDelimiter);
+    std::string rawDelimiter = input.substr(2, newlinePos - 2);
+    std::string processedDelimiter = processDelimiterBrackets(rawDelimiter);
+    return escapeRegexCharacters(processedDelimiter);
 }
 
+// CCN=2: Extract numbers section with fallback
 std::string StringCalculator::extractNumbersSection(const std::string& input) const {
-    const size_t newlinePos = input.find('\n');
+    size_t newlinePos = input.find('\n');
     if (newlinePos == std::string::npos) {
         return "";
     }
     return input.substr(newlinePos + 1);
 }
 
+// CCN=2: Process bracket notation
 std::string StringCalculator::processDelimiterBrackets(const std::string& delimiter) const {
     if (delimiter.length() >= 2 && delimiter.front() == '[' && delimiter.back() == ']') {
         return delimiter.substr(1, delimiter.length() - 2);
@@ -53,15 +59,17 @@ std::string StringCalculator::processDelimiterBrackets(const std::string& delimi
     return delimiter;
 }
 
-std::string StringCalculator::escapeSpecialCharacters(const std::string& delimiter) const {
+// CCN=1: Escape regex special characters
+std::string StringCalculator::escapeRegexCharacters(const std::string& delimiter) const {
     return std::regex_replace(delimiter, std::regex(R"([\[\]{}()*+?.^$|\\])"), R"(\$&)");
 }
 
-std::vector<std::string> StringCalculator::tokenizeNumbers(const std::string& numbers, const std::string& delimiter) const {
+// CCN=1: Parse tokens using regex
+std::vector<std::string> StringCalculator::parseTokens(const std::string& numbers, const std::string& delimiter) const {
     std::vector<std::string> result;
-    const std::regex delimiterRegex(delimiter);
+    std::regex delimiterRegex(delimiter);
     std::sregex_token_iterator iter(numbers.begin(), numbers.end(), delimiterRegex, -1);
-    const std::sregex_token_iterator end;
+    std::sregex_token_iterator end;
     
     for (; iter != end; ++iter) {
         if (!iter->str().empty()) {
@@ -71,7 +79,8 @@ std::vector<std::string> StringCalculator::tokenizeNumbers(const std::string& nu
     return result;
 }
 
-std::vector<int> StringCalculator::convertToIntegers(const std::vector<std::string>& tokens) const {
+// CCN=2: Convert tokens to numbers with error handling
+std::vector<int> StringCalculator::convertToNumbers(const std::vector<std::string>& tokens) const {
     std::vector<int> result;
     for (const auto& token : tokens) {
         try {
@@ -83,20 +92,22 @@ std::vector<int> StringCalculator::convertToIntegers(const std::vector<std::stri
     return result;
 }
 
-void StringCalculator::validateNegativeNumbers(const std::vector<int>& numbers) const {
+// CCN=2: Validate no negatives and throw if found
+void StringCalculator::validateNoNegatives(const std::vector<int>& numbers) const {
     std::vector<int> negatives;
-    for (const int number : numbers) {
+    for (int number : numbers) {
         if (number < 0) {
             negatives.push_back(number);
         }
     }
     
     if (!negatives.empty()) {
-        throw NegativeNumberException(createNegativeErrorMessage(negatives));
+        throw NegativeNumberException(formatNegativeMessage(negatives));
     }
 }
 
-std::string StringCalculator::createNegativeErrorMessage(const std::vector<int>& negatives) const {
+// CCN=1: Format negative numbers error message
+std::string StringCalculator::formatNegativeMessage(const std::vector<int>& negatives) const {
     std::ostringstream message;
     message << "negatives not allowed: ";
     for (size_t i = 0; i < negatives.size(); ++i) {
@@ -108,12 +119,18 @@ std::string StringCalculator::createNegativeErrorMessage(const std::vector<int>&
     return message.str();
 }
 
+// CCN=2: Sum only valid numbers (<=1000)
 int StringCalculator::sumValidNumbers(const std::vector<int>& numbers) const {
     int sum = 0;
-    for (const int number : numbers) {
-        if (number <= 1000) {
+    for (int number : numbers) {
+        if (isValidNumber(number)) {
             sum += number;
         }
     }
     return sum;
+}
+
+// CCN=1: Check if number is valid (non-negative and <=1000)
+bool StringCalculator::isValidNumber(int number) const {
+    return number >= 0 && number <= 1000;
 }
