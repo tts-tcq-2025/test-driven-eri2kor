@@ -6,7 +6,7 @@ protected:
     StringCalculator calculator;
 };
 
-// TDD Step 1: Smallest failing test
+// TDD Step 1: Smallest possible failing test
 TEST_F(StringCalculatorTest, EmptyStringReturnsZero) {
     EXPECT_EQ(0, calculator.Add(""));
 }
@@ -27,22 +27,25 @@ TEST_F(StringCalculatorTest, TwoNumbersReturnSum) {
 TEST_F(StringCalculatorTest, UnknownAmountOfNumbers) {
     EXPECT_EQ(6, calculator.Add("1,2,3"));
     EXPECT_EQ(15, calculator.Add("1,2,3,4,5"));
+    EXPECT_EQ(21, calculator.Add("1,2,3,4,5,6"));
 }
 
-// TDD Step 5: Newline delimiters
-TEST_F(StringCalculatorTest, NewLineDelimiters) {
+// TDD Step 5: Handle newlines between numbers
+TEST_F(StringCalculatorTest, NewlineDelimiters) {
     EXPECT_EQ(6, calculator.Add("1\n2,3"));
     EXPECT_EQ(6, calculator.Add("1,2\n3"));
+    EXPECT_EQ(10, calculator.Add("1\n2\n3\n4"));
 }
 
-// TDD Step 6: Custom delimiters
+// TDD Step 6: Support different delimiters
 TEST_F(StringCalculatorTest, CustomDelimiters) {
     EXPECT_EQ(3, calculator.Add("//;\n1;2"));
     EXPECT_EQ(6, calculator.Add("//|\n1|2|3"));
+    EXPECT_EQ(10, calculator.Add("//:\n1:2:3:4"));
 }
 
-// TDD Step 7: Negative numbers
-TEST_F(StringCalculatorTest, NegativeNumbersThrowException) {
+// TDD Step 7: Negative numbers throw exception
+TEST_F(StringCalculatorTest, NegativeNumberThrowsException) {
     EXPECT_THROW(calculator.Add("1,-2,3"), NegativeNumberException);
 }
 
@@ -55,24 +58,33 @@ TEST_F(StringCalculatorTest, MultipleNegativeNumbersShowAllInMessage) {
     }
 }
 
-// TDD Step 8: Numbers bigger than 1000
+// TDD Step 8: Numbers bigger than 1000 ignored
 TEST_F(StringCalculatorTest, NumbersBiggerThanThousandIgnored) {
     EXPECT_EQ(2, calculator.Add("2,1001"));
     EXPECT_EQ(1000, calculator.Add("1000,1001"));
+    EXPECT_EQ(1003, calculator.Add("1,2,1000,2000"));
 }
 
 // TDD Step 9: Delimiters of any length
 TEST_F(StringCalculatorTest, DelimitersOfAnyLength) {
     EXPECT_EQ(6, calculator.Add("//[***]\n1***2***3"));
     EXPECT_EQ(6, calculator.Add("//[||]\n1||2||3"));
+    EXPECT_EQ(15, calculator.Add("//[abc]\n1abc2abc3abc4abc5"));
 }
 
-// Edge cases for 100% coverage
-TEST_F(StringCalculatorTest, EdgeCases) {
+// Additional edge cases for 100% coverage
+TEST_F(StringCalculatorTest, EdgeCasesForFullCoverage) {
     EXPECT_EQ(0, calculator.Add("0"));
     EXPECT_EQ(999, calculator.Add("999"));
     EXPECT_EQ(3, calculator.Add("1,abc,2"));
     EXPECT_EQ(0, calculator.Add("//;\n"));
+    EXPECT_EQ(0, calculator.Add("abc,def,ghi"));
+}
+
+TEST_F(StringCalculatorTest, BoundaryValues) {
+    EXPECT_EQ(1000, calculator.Add("1000"));
+    EXPECT_EQ(0, calculator.Add("1001"));
+    EXPECT_EQ(1001, calculator.Add("1,1000"));
 }
 
 int main(int argc, char **argv) {
