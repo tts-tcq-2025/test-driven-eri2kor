@@ -15,12 +15,14 @@ TEST_F(StringCalculatorTest, EmptyStringReturnsZero) {
 TEST_F(StringCalculatorTest, SingleNumberReturnsThatNumber) {
     EXPECT_EQ(1, calculator.Add("1"));
     EXPECT_EQ(5, calculator.Add("5"));
+    EXPECT_EQ(0, calculator.Add("0"));
 }
 
 // TDD Step 3: Two numbers
 TEST_F(StringCalculatorTest, TwoNumbersReturnSum) {
     EXPECT_EQ(3, calculator.Add("1,2"));
     EXPECT_EQ(10, calculator.Add("4,6"));
+    EXPECT_EQ(1, calculator.Add("1,0"));
 }
 
 // TDD Step 4: Unknown amount of numbers
@@ -49,6 +51,15 @@ TEST_F(StringCalculatorTest, NegativeNumberThrowsException) {
     EXPECT_THROW(calculator.Add("1,-2,3"), NegativeNumberException);
 }
 
+TEST_F(StringCalculatorTest, SingleNegativeNumberShowsInMessage) {
+    try {
+        calculator.Add("1,-2,3");
+        FAIL() << "Expected NegativeNumberException";
+    } catch (const NegativeNumberException& e) {
+        EXPECT_STREQ("negatives not allowed: -2", e.what());
+    }
+}
+
 TEST_F(StringCalculatorTest, MultipleNegativeNumbersShowAllInMessage) {
     try {
         calculator.Add("1,-2,-3,4");
@@ -72,19 +83,36 @@ TEST_F(StringCalculatorTest, DelimitersOfAnyLength) {
     EXPECT_EQ(15, calculator.Add("//[abc]\n1abc2abc3abc4abc5"));
 }
 
-// Additional edge cases for 100% coverage
+// Additional comprehensive tests for 100% coverage
 TEST_F(StringCalculatorTest, EdgeCasesForFullCoverage) {
-    EXPECT_EQ(0, calculator.Add("0"));
     EXPECT_EQ(999, calculator.Add("999"));
     EXPECT_EQ(3, calculator.Add("1,abc,2"));
     EXPECT_EQ(0, calculator.Add("//;\n"));
     EXPECT_EQ(0, calculator.Add("abc,def,ghi"));
 }
 
-TEST_F(StringCalculatorTest, BoundaryValues) {
+TEST_F(StringCalculatorTest, BoundaryValueTesting) {
     EXPECT_EQ(1000, calculator.Add("1000"));
     EXPECT_EQ(0, calculator.Add("1001"));
     EXPECT_EQ(1001, calculator.Add("1,1000"));
+}
+
+TEST_F(StringCalculatorTest, ComplexDelimiterScenarios) {
+    EXPECT_EQ(6, calculator.Add("//[##]\n1##2##3"));
+    EXPECT_EQ(10, calculator.Add("//[%]\n1%2%3%4"));
+    EXPECT_EQ(0, calculator.Add("//[***]\n"));
+}
+
+TEST_F(StringCalculatorTest, MixedValidAndInvalidNumbers) {
+    EXPECT_EQ(6, calculator.Add("1,2,3,abc"));
+    EXPECT_EQ(3, calculator.Add("1,,2"));
+    EXPECT_EQ(6, calculator.Add("1,2,3,"));
+}
+
+TEST_F(StringCalculatorTest, CustomDelimiterWithSpecialCharacters) {
+    EXPECT_EQ(6, calculator.Add("//[***]\n1***2***3"));
+    EXPECT_EQ(6, calculator.Add("//[+++]\n1+++2+++3"));
+    EXPECT_EQ(6, calculator.Add("//[...]\n1...2...3"));
 }
 
 int main(int argc, char **argv) {
