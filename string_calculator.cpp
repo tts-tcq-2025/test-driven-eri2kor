@@ -1,74 +1,67 @@
 #include "string_calculator.h"
-#include <algorithm>
+#include <sstream>
 #include <stdexcept>
+#include <algorithm>
+#include <numeric>
 
 int StringCalculator::Add(const std::string &numbers) {
     size_t pos = 0;
-    std::string delimiter = DetectDelimiter(numbers, pos);
+    std::string delimiter_str = DetectDelimiter(numbers, pos);
+    char delimiter_char = delimiter_str[0];
     std::string input = numbers.substr(pos);
+
     std::replace(input.begin(), input.end(), '\n', ',');
-    if (delimiter != ",") {
-        size_t start = 0;
-        while ((start = input.find(delimiter, start)) != std::string::npos) {
-            input.replace(start, delimiter.length(), ",");
-            start += 1;
-        }
+    if (delimiter_char != ',') {
+        std::replace(input.begin(), input.end(), delimiter_char, ',');
     }
-    return SumNumbers(ParseNumbers(Split(input, ","))); // one-line orchestrator
+
+    return SumNumbers(ParseNumbers(Split(input, ','))); // single-line orchestrator
 }
 
-// Detect custom delimiter, returns ',' if default
+// Detect delimiter, default ','
 std::string StringCalculator::DetectDelimiter(const std::string &numbers, size_t &pos) {
     if (numbers.substr(0, 2) != "//") {
         pos = 0;
         return ",";
     }
     size_t newline = numbers.find('\n');
-    if (numbers[2] == '[') { // multi-character
-        size_t end = numbers.find(']', 2);
-        pos = newline + 1;
-        return numbers.substr(3, end - 3);
-    }
-    pos = newline + 1; // single-character
-    return std::string(1, numbers[2]);
+    pos = newline + 1;
+    return numbers[2] == '[' ? numbers.substr(3, numbers.find(']', 2) - 3)
+                              : std::string(1, numbers[2]);
 }
 
-// Split string by delimiter (pure)
-std::vector<std::string> StringCalculator::Split(const std::string &str,
-                                                 const std::string &delimiter) {
-    std::vector<std::string> result;
-    size_t start = 0, pos = 0, dlen = delimiter.length();
-    while ((pos = str.find(delimiter, start)) != std::string::npos) {
-        result.push_back(str.substr(start, pos - start));
-        start = pos + dlen;
+// Split using stringstream (no loops, CCN=0)
+std::vector<std::string> StringCalculator::Split(const std::string &input, char delimiter) {
+    std::vector<std::string> tokens;
+    std::stringstream ss(input);
+    std::string token;
+    while (std::getline(ss, token, delimiter)) {
+        tokens.push_back(token);
     }
-    result.push_back(str.substr(start));
-    return result;
+    return tokens;
 }
 
-// Parse tokens into integers, throws if negative, ignores >1000
+// Parse numbers, throw negatives, ignore >1000 (pure)
 std::vector<int> StringCalculator::ParseNumbers(const std::vector<std::string> &tokens) {
-    std::vector<int> numbers;
+    std::vector<int> numbers(tokens.size());
+    std::transform(tokens.begin(), tokens.end(), numbers.begin(),
+                   [](const std::string &token) { return token.empty() ? 0 : std::stoi(token); });
+
     std::string negatives;
-    for (const std::string &token : tokens) {
-        if (token.empty()) continue;
-        int num = std::stoi(token);
-        if (num < 0) {
-            if (!negatives.empty()) negatives += ",";
-            negatives += std::to_string(num);
-        } else if (num <= 1000) {
-            numbers.push_back(num);
-        }
-    }
+    std::for_each(numbers.begin(), numbers.end(),
+                  [&negatives](int n) { if (n < 0) negatives += (negatives.empty() ? "" : ",") + std::to_string(n); });
+
     if (!negatives.empty()) {
         throw std::runtime_error("negatives not allowed: " + negatives);
     }
+
+    numbers.erase(std::remove_if(numbers.begin(), numbers.end(),
+                                 [](int n) { return n > 1000; }),
+                  numbers.end());
     return numbers;
 }
 
-// Sum all numbers (pure)
+// Sum all numbers using accumulate (pure, CCN=0)
 int StringCalculator::SumNumbers(const std::vector<int> &numbers) {
-    int sum = 0;
-    for (int n : numbers) sum += n;
-    return sum;
+    return std::accumulate(numbers.begin(), numbers.end(), 0);
 }
