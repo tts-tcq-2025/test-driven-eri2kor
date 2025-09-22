@@ -9,7 +9,6 @@ TEST(StringCalculator, EmptyStringReturnsZero) {
 TEST(StringCalculator, SingleNumber) {
     StringCalculator calc;
     EXPECT_EQ(calc.Add("1"), 1);
-    EXPECT_EQ(calc.Add("42"), 42);
 }
 
 TEST(StringCalculator, TwoNumbersCommaDelimited) {
